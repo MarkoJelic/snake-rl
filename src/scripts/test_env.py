@@ -1,5 +1,8 @@
 from snake_rl.env.snake_env import SnakeEnv
 import random
+from datetime import datetime
+from pathlib import Path
+
 
 env = SnakeEnv()
 state = env.reset()
