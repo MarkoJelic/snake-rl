@@ -7,10 +7,10 @@ class QTableAgent:
         self,
         state_size: int,
         action_size: int,
-        alpha: float = 0.1,
+        alpha: float = 0.05,
         gamma: float = 0.9,
         epsilon: float = 1.0,
-        epsilon_decay: float = 0.995,
+        epsilon_decay: float = 0.9995,
         epsilon_min: float = 0.01,
     ):
         self.state_size = state_size

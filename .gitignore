@@ -68,6 +68,7 @@ models/
 checkpoints/
 runs/
 tensorboard/
+results/
 
 # OS
 Thumbs.db

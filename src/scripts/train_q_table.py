@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 env = SnakeEnv()
 agent = QTableAgent(state_size=11, action_size=3)
 
-episodes = 5000
+episodes = 20000
 
 # Create results directory
 results_dir = Path("results")
@@ -26,7 +26,7 @@ epsilon_values = []
 eval_rewards = []
 eval_checkpoints = []
 
-window_size = 100
+window_size = 200
 
 log_f = open(log_file, "w")
 
@@ -46,6 +46,9 @@ for episode in range(episodes):
         total_reward += reward
 
     agent.decay_epsilon()
+
+    if episode >= 15000:
+        agent.epsilon = 0.0  # pure greedy
 
     episode_rewards.append(total_reward)
     epsilon_values.append(agent.epsilon)
@@ -85,38 +88,40 @@ for episode in range(episodes):
 
         agent.epsilon = saved_epsilon  # restore
 
-        print(f"Evaluation at {episode}: {avg_eval_reward:.2f}")
-
-
-    if episode % 100 == 0:
-        log_line = f"Episode {episode}, Total Reward: {total_reward:.2f}, Epsilon: {agent.epsilon:.3f}"
+        log_line = f"Evaluation at {episode}: {avg_eval_reward:.2f}"
         print(log_line)
         log_f.write(log_line + "\n")
 
+    if episode % 100 == 0:
+        log_line = f"Episode {episode}, Total Reward: {total_reward:.2f}, Epsilon: {agent.epsilon:.3f}, Moving Avg: {moving_avg:.2f}"
+        print(log_line)
+        log_f.write(log_line + "\n")
+        
+
 log_f.close()
 
+plt.style.use("seaborn-v0_8-darkgrid")
 plt.figure(figsize=(10, 6))
 
-plt.plot(episode_rewards, label="Raw Reward", alpha=0.3)
-plt.plot(moving_averages, label="Moving Average (100)")
+# Moving average (training performance)
+plt.plot(moving_averages, label="Training Moving Avg", linewidth=2)
 
-plt.scatter(eval_checkpoints, eval_rewards, label="Evaluation", color="red")
+# Evaluation line (connect points instead of scatter)
+plt.plot(eval_checkpoints, eval_rewards, 
+         label="Evaluation (Greedy)", 
+         color="red", 
+         linewidth=2, 
+         marker="o")
 
 plt.xlabel("Episode")
 plt.ylabel("Reward")
+plt.title("Training vs Evaluation Performance")
 plt.legend()
-plt.title("Training Performance")
+plt.grid(alpha=0.3)
+
 plot_path = results_dir / f"training_plot_{timestamp}.png"
 plt.savefig(plot_path, dpi=150, bbox_inches="tight")
 plt.close()
 
-plt.figure(figsize=(10, 4))
-plt.plot(epsilon_values)
-plt.title("Epsilon Decay")
-plt.xlabel("Episode")
-plt.ylabel("Epsilon")
-epsilon_plot_path = results_dir / f"epsilon_plot_{timestamp}.png"
-plt.savefig(epsilon_plot_path, dpi=150, bbox_inches="tight")
-plt.close()
 
 # poetry run python src/scripts/train_q_table.py
