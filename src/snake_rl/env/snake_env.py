@@ -4,9 +4,15 @@ from typing import Tuple, List
 
 
 class SnakeEnv:
-    def __init__(self, grid_size: int = 10, seed: int | None = None):
+    def __init__(
+        self,
+        grid_size: int = 10,
+        seed: int | None = None,
+        state_mode: str = "features",
+    ):
         self.grid_size = grid_size
         self.rng = random.Random(seed)
+        self.state_mode = state_mode
 
         self.snake: List[Tuple[int, int]] = []
         self.direction: Tuple[int, int] = (1, 0)
@@ -103,7 +109,7 @@ class SnakeEnv:
 
         return False
 
-    def _get_state(self) -> np.ndarray:
+    def _get_feature_state(self) -> np.ndarray:
         head_x, head_y = self.snake[0]
 
         dir_x, dir_y = self.direction
@@ -142,6 +148,39 @@ class SnakeEnv:
         ]
 
         return np.array(state, dtype=int)
+    
+    def _get_grid_state(self) -> np.ndarray:
+        """
+        Multi-channel grid representation:
+        Channel 0: snake body (excluding head)
+        Channel 1: snake head
+        Channel 2: food
+        """
+
+        grid = np.zeros((3, self.grid_size, self.grid_size), dtype=np.float32)
+
+        # Snake body (exclude head)
+        for (x, y) in self.snake[1:]:
+            grid[0, y, x] = 1.0
+
+        # Snake head
+        head_x, head_y = self.snake[0]
+        grid[1, head_y, head_x] = 1.0
+
+        # Food
+        food_x, food_y = self.food
+        grid[2, food_y, food_x] = 1.0
+
+        return grid
+
+
+    def _get_state(self) -> np.ndarray:
+        if self.state_mode == "features":
+            return self._get_feature_state()
+        elif self.state_mode == "grid":
+            return self._get_grid_state()
+        else:
+            raise ValueError(f"Unknown state mode: {self.state_mode}")
 
     def _rotate_direction(self, action: int) -> None:
         if action not in [0, 1, 2]:
