@@ -68,8 +68,11 @@ models/
 checkpoints/
 runs/
 tensorboard/
-results/
 
 # OS
 Thumbs.db
 .DS_Store
+
+# Poetry
+poetry.lock
+pyproject.toml
