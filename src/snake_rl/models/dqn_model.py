@@ -23,15 +23,25 @@ class DQN(nn.Module):
             conv_out = self.conv(dummy)
             conv_out_size = conv_out.view(1, -1).size(1)
 
-        # Fully connected layers
-        self.fc = nn.Sequential(
+        # Shared FC
+        self.fc_shared = nn.Sequential(
             nn.Linear(conv_out_size, 256),
             nn.ReLU(),
-            nn.Linear(256, action_size),
         )
+
+        # Value stream
+        self.value_stream = nn.Linear(256, 1)
+
+        # Advantage stream
+        self.advantage_stream = nn.Linear(256, action_size)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.conv(x)
         x = torch.flatten(x, start_dim=1)
-        x = self.fc(x)
-        return x
+        x = self.fc_shared(x)
+
+        value = self.value_stream(x)
+        advantage = self.advantage_stream(x)
+
+        q_values = value + advantage - advantage.mean(dim=1, keepdim=True)
+        return q_values

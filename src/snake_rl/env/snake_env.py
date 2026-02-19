@@ -54,8 +54,11 @@ class SnakeEnv:
         self._rotate_direction(action)
 
         head_x, head_y = self.snake[0]
+        food_x, food_y = self.food
+        old_distance = abs(head_x - food_x) + abs(head_y - food_y)
         dx, dy = self.direction
         new_head = (head_x + dx, head_y + dy)
+        new_head_x, new_head_y = new_head
 
         # Check collision
         if self._is_collision(new_head):
@@ -68,6 +71,14 @@ class SnakeEnv:
 
         reward = -0.01  # step penalty
 
+        new_distance = abs(new_head_x - food_x) + abs(new_head_y - food_y)
+
+        # Reward shaping
+        if new_distance < old_distance:
+            reward += 0.05
+        elif new_distance > old_distance:
+            reward -= 0.05
+
         # Check if food eaten
         if new_head == self.food:
             self.score += 1
@@ -77,6 +88,13 @@ class SnakeEnv:
         else:
             # Remove tail
             self.snake.pop()
+            # Distance-based shaping (only if not eating)
+            new_distance = abs(new_head_x - food_x) + abs(new_head_y - food_y)
+
+            if new_distance < old_distance:
+                reward += 0.05
+            elif new_distance > old_distance:
+                reward -= 0.05
 
         # Timeout condition
         if self.steps >= self.max_steps:

@@ -42,6 +42,9 @@ class DQNAgent:
             device if device else ("cuda" if torch.cuda.is_available() else "cpu")
         )
 
+        # Target network update frequency (Soft)
+        self.tau = 0.005
+
         # Networks
         self.policy_net = DQN(state_size, action_size).to(self.device)
         self.target_net = DQN(state_size, action_size).to(self.device)
@@ -123,10 +126,16 @@ class DQNAgent:
         # Target Q-values
         # ----------------------------
         with torch.no_grad():
-            next_q_values = self.target_net(next_states)
-            max_next_q = torch.max(next_q_values, dim=1)[0]
+            # Online network selects best action
+            next_policy_q = self.policy_net(next_states)
+            next_actions = torch.argmax(next_policy_q, dim=1, keepdim=True)
+
+            # Target network evaluates that action
+            next_target_q = self.target_net(next_states)
+            max_next_q = next_target_q.gather(1, next_actions).squeeze(1)
 
             target_q = rewards + self.gamma * max_next_q * (1 - dones)
+
 
         # ----------------------------
         # Loss
@@ -145,11 +154,15 @@ class DQNAgent:
         self.optimizer.step()
 
         # ----------------------------
-        # Target Network Update
+        # Target Network Update (Soft)
         # ----------------------------
-        self.train_step_count += 1
-        if self.train_step_count % self.target_update_freq == 0:
-            self.target_net.load_state_dict(self.policy_net.state_dict())
+        for target_param, policy_param in zip(
+            self.target_net.parameters(),
+            self.policy_net.parameters()
+        ):
+            target_param.data.copy_(
+                self.tau * policy_param.data + (1.0 - self.tau) * target_param.data
+            )
 
         return loss.item()
 
