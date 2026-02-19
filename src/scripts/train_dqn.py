@@ -24,7 +24,7 @@ def main():
         state_size=state_shape,
         action_size=3,
         lr=5e-4,
-        gamma=0.99,
+        gamma=0.995,
         batch_size=64,
         buffer_size=100_000,
         epsilon=1.0,
