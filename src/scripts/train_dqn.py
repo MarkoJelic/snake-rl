@@ -39,7 +39,7 @@ def main():
     results = train_dqn(
         env=env,
         agent=agent,
-        episodes=8000,
+        episodes=5000,
         eval_interval=500,
         eval_episodes=20,
         moving_avg_window=100,
